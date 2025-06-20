@@ -1,8 +1,21 @@
-
+from flask import Flask
+from threading import Thread
 import requests
-import telegram
-from telegram.ext import Updater, CommandHandler
 import time
+from telegram.ext import Updater, CommandHandler
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "I'm alive!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
 
 TELEGRAM_BOT_TOKEN = '7413469925:AAGfVC48BAAilkOO_yk-li2v6xg9duG2inU'
 TELEGRAM_CHAT_ID = '6065493589'
@@ -19,7 +32,7 @@ def send_telegram_message(message):
 def start(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Signal service started!")
     while True:
-        message = f"Trading Signal:\nPrice: {closing_prices[-1]}\nSignal: BUY (RSI below 30)"
+        message = f"Trading Signal:\\nPrice: {closing_prices[-1]}\\nSignal: BUY (RSI below 30)"
         send_telegram_message(message)
         time.sleep(180)
 
@@ -35,5 +48,5 @@ def main():
     updater.start_polling()
     updater.idle()
 
-if __name__ == '__main__':
-    main()
+keep_alive()
+main()
