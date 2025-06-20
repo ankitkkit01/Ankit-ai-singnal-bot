@@ -2,9 +2,11 @@ from flask import Flask
 from threading import Thread
 import requests
 import time
-from telegram.ext import Updater, CommandHandler
+import asyncio
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-app = Flask('')
+app = Flask(__name__)
 
 @app.route('/')
 def home():
@@ -29,24 +31,27 @@ def send_telegram_message(message):
     payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': message}
     requests.post(url, data=payload)
 
-def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Signal service started!")
-    while True:
-        message = f"Trading Signal:\\nPrice: {closing_prices[-1]}\\nSignal: BUY (RSI below 30)"
+running = False
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global running
+    running = True
+    await update.message.reply_text("Signal service started!")
+    while running:
+        message = f"Trading Signal:\nPrice: {closing_prices[-1]}\nSignal: BUY (RSI below 30)"
         send_telegram_message(message)
-        time.sleep(180)
+        await asyncio.sleep(180)
 
-def stop(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Signal service stopped!")
-    exit(0)
+async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global running
+    running = False
+    await update.message.reply_text("Signal service stopped!")
 
-def main():
-    updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("stop", stop))
-    updater.start_polling()
-    updater.idle()
+async def main():
+    application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("stop", stop))
+    await application.run_polling()
 
 keep_alive()
-main()
+asyncio.run(main())
