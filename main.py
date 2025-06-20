@@ -21,4 +21,3 @@ def stop(update, context): context.bot.send_message(chat_id=update.effective_cha
 def main(): updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True) dp = updater.dispatcher dp.add_handler(CommandHandler("start", start)) dp.add_handler(CommandHandler("stop", stop)) updater.start_polling() updater.idle()
 
 keep_alive() main()
-
